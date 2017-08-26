@@ -1,13 +1,13 @@
 {-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Lib
     ( startApp
     , app
     ) where
 
 import Data.Aeson
-import Data.Aeson.TH
+import GHC.Generics
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -20,10 +20,9 @@ data User = User
   { userId        :: Int
   , userFirstName :: String
   , userLastName  :: String
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Generic)
 
-$(deriveJSON defaultOptions ''User)
-
+instance ToJSON User
 data SortBy = Age | Name
 
 instance FromHttpApiData SortBy where
