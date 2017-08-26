@@ -1,0 +1,7 @@
+sudo: required
+script:
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - docker build -t mahulst/docker-api .
+  - docker push mahulst/docker-api:latest
+services:
+  - docker 
