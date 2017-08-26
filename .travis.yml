@@ -3,5 +3,10 @@ script:
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - docker build -t mahulst/haskell-api .
   - docker push mahulst/haskell-api:latest
+
+notifications:
+  email:
+    on_success: never
+    on_failure: never
 services:
   - docker 
