@@ -1,38 +1,67 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE DeriveGeneric #-}
-module Lib
-    ( startApp
-    , app
-    ) where
+{-# LANGUAGE TypeOperators #-}
 
-import Data.Aeson
-import GHC.Generics
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Servant
-import Servant.API
-import Control.Monad.IO.Class
-import Control.Monad.Reader
-import Control.Monad.Trans.Either
-import Data.Text
+module Lib
+  ( startApp
+  , app
+  ) where
+
+import           Data.Aeson
+import           Data.Text
+import           GHC.Generics
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Servant
+
 data User = User
   { userId        :: Int
   , userFirstName :: String
   , userLastName  :: String
   } deriving (Eq, Show, Generic)
 
+data Recipe = Recipe
+  { recipeText  :: Text
+  , ingredients :: [Ingredient]
+  } deriving (Show, Generic)
+
+data Ingredient = Ingredient
+  { ingredientName :: Text
+  , howMuch        :: Text
+  , category       :: Category
+  } deriving (Show, Generic)
+
+data Category
+  = Vegetable
+  | Diary
+  | Meat
+  | Sweet
+  | Bread
+  | General
+  deriving (Show, Generic)
+
 instance ToJSON User
-data SortBy = Age | Name
+
+instance ToJSON Recipe
+
+instance ToJSON Ingredient
+
+instance ToJSON Category
+
+
+data SortBy
+  = Age
+  | Name
 
 instance FromHttpApiData SortBy where
   parseQueryParam text =
-    case unpack(text)  of
-      "age" -> Right Age
+    case unpack text of
+      "age"  -> Right Age
       "name" -> Right Name
-      _ -> Left (pack "None")
+      _      -> Left (pack "None")
 
-type API = "users" :> QueryParam "sorty" SortBy :> Get '[JSON] [User]
+type API
+   = "users" :> QueryParam "sorty" SortBy :> Get '[ JSON] [User] :<|> "recipes" :> Get '[ JSON] [Recipe]
 
 startApp :: IO ()
 startApp = run 8080 app
@@ -44,14 +73,25 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = users
-  where users :: Maybe SortBy -> Handler [User]
-        users sort =
-          case sort of
-            Just Age -> return userList
-            Just Name -> return (Prelude.reverse userList)
-            Nothing -> return []
+server = users :<|> recipes
+  where
+    users :: Maybe SortBy -> Handler [User]
+    users sort =
+      case sort of
+        Just Age  -> return userList
+        Just Name -> return (Prelude.reverse userList)
+        Nothing   -> return []
+    recipes :: Handler [Recipe]
+    recipes = return recipeList
+
 userList :: [User]
-userList = [ User 1 "Isaac" "Newton"
-        , User 2 "Albert" "Einstein"
-        ]
+userList = [User 1 "Isaac" "Newton", User 2 "Albert" "Einstein"]
+
+recipeList :: [Recipe]
+recipeList =
+  [ Recipe
+      (pack "This is a recipe for Pancakes")
+      [ Ingredient (pack "Flour") (pack "250 gram") General
+      , Ingredient (pack "Eggs") (pack "4") Diary
+      ]
+  ]
