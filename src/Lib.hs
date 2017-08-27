@@ -41,6 +41,7 @@ data Category
   deriving (Show, Generic)
 
 instance ToJSON User
+instance FromJSON User
 
 instance ToJSON Recipe
 
@@ -61,7 +62,7 @@ instance FromHttpApiData SortBy where
       _      -> Left (pack "None")
 
 type API
-   = "users" :> QueryParam "sorty" SortBy :> Get '[ JSON] [User] :<|> "recipes" :> Get '[ JSON] [Recipe]
+   = "users" :> QueryParam "sorty" SortBy :> Get '[ JSON] [User] :<|> "recipes" :> Get '[ JSON] [Recipe] :<|> "users" :> "add" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe User)
 
 startApp :: IO ()
 startApp = run 8080 app
@@ -73,7 +74,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = users :<|> recipes
+server = users :<|> recipes :<|> userAdd
   where
     users :: Maybe SortBy -> Handler [User]
     users sort =
@@ -83,6 +84,9 @@ server = users :<|> recipes
         Nothing   -> return []
     recipes :: Handler [Recipe]
     recipes = return recipeList
+    userAdd :: User -> Handler (Maybe User)
+    userAdd newUser = return (Just newUser)
+
 
 userList :: [User]
 userList = [User 1 "Isaac" "Newton", User 2 "Albert" "Einstein"]
